@@ -34,11 +34,6 @@ function getSpecificKeywords(packageName, packagePath) {
 		specificKeywords.push('vault', 'encryption', 'security', 'keys');
 	}
 
-	// Verifiable Storage
-	if (packageName.includes('verifiable-storage')) {
-		specificKeywords.push('verifiable', 'storage', 'proof', 'immutable');
-	}
-
 	// Identity
 	if (packageName.includes('identity')) {
 		specificKeywords.push('identity', 'did', 'credentials', 'authentication');
