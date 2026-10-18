@@ -34,10 +34,6 @@
 	path = identity
 	url = https://github.com/3sixtyglobal/identity.git
 	branch = next
-[submodule "verifiable-storage"]
-	path = verifiable-storage
-	url = https://github.com/3sixtyglobal/verifiable-storage.git
-	branch = next
 [submodule "logging"]
 	path = logging
 	url = https://github.com/3sixtyglobal/logging.git
@@ -110,10 +106,6 @@
 	path = federated-catalogue
 	url = https://github.com/3sixtyglobal/federated-catalogue.git
 	branch = next
-[submodule "synchronised-storage"]
-	path = synchronised-storage
-	url = https://github.com/3sixtyglobal/synchronised-storage.git
-	branch = next
 [submodule "trust"]
 	path = trust
 	url = https://github.com/3sixtyglobal/trust.git
@@ -125,10 +117,6 @@
 [submodule "notarization"]
 	path = notarization
 	url = https://github.com/3sixtyglobal/notarization.git
-	branch = next
-[submodule "hierarchies"]
-	path = hierarchies
-	url = https://github.com/3sixtyglobal/hierarchies.git
 	branch = next
 [submodule "automation"]
 	path = automation
