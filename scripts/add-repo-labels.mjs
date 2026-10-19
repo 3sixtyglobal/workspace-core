@@ -1,5 +1,10 @@
+// Creates the standard issue labels in workspace-core and every submodule repo.
+// LABELS mirrors the repository default labels, so keep both in step when changing either.
+// Labels that already exist are updated to match the colour and description. Set GITHUB_TOKEN before running.
 import { Octokit } from '@octokit/rest';
 import { readFileSync } from 'fs';
+
+const GITHUB_TOKEN = 'github_pat_...';
 
 const workspacePackage = JSON.parse(
 	readFileSync(new URL('../package.json', import.meta.url), 'utf8')
@@ -7,7 +12,7 @@ const workspacePackage = JSON.parse(
 const SUBMODULES = ['workspace-core', ...workspacePackage.submodules];
 
 const octokit = new Octokit({
-	auth: 'github_pat_...'
+	auth: GITHUB_TOKEN
 });
 
 const ORG = '3sixtyglobal';
@@ -19,7 +24,7 @@ const LABELS = [
 	},
 	{
 		name: 'autorelease: tagged',
-		color: '74C7AC',
+		color: '74c7ac',
 		description: 'This issue has been tagged by the autorelease'
 	},
 	{
@@ -51,6 +56,56 @@ const LABELS = [
 		name: 'testing',
 		color: 'add8e6',
 		description: 'A task to enhance testing coverage or improve testing infrastructure'
+	},
+	{
+		name: 'accessibility',
+		color: 'f143ab',
+		description: 'Barrier affecting people with disabilities'
+	},
+	{
+		name: 'bug',
+		color: 'd73a4a',
+		description: "Something isn't working"
+	},
+	{
+		name: 'documentation',
+		color: '0075ca',
+		description: 'Improvements or additions to documentation'
+	},
+	{
+		name: 'duplicate',
+		color: 'cfd3d7',
+		description: 'This issue or pull request already exists'
+	},
+	{
+		name: 'enhancement',
+		color: 'a2eeef',
+		description: 'New feature or request'
+	},
+	{
+		name: 'good first issue',
+		color: '7057ff',
+		description: 'Good for newcomers'
+	},
+	{
+		name: 'help wanted',
+		color: '008672',
+		description: 'Extra attention is needed'
+	},
+	{
+		name: 'invalid',
+		color: 'e4e669',
+		description: "This doesn't seem right"
+	},
+	{
+		name: 'question',
+		color: 'd876e3',
+		description: 'Further information is requested'
+	},
+	{
+		name: 'wontfix',
+		color: 'ffffff',
+		description: 'This will not be worked on'
 	}
 ];
 
@@ -71,7 +126,16 @@ async function addLabelToRepo(repoName) {
 			console.log(`✅ Label ${label.name} added to ${repoName}`);
 		} catch (err) {
 			if (err.status === 422) {
-				console.log(`⚠️ Label ${label.name} already exists in ${repoName}`);
+				try {
+					await octokit.issues.updateLabel({
+						owner: ORG,
+						repo: repoName,
+						...label
+					});
+					console.log(`🔄 Label ${label.name} updated in ${repoName}`);
+				} catch (updateErr) {
+					console.error(`❌ Error updating ${label.name} in ${repoName}:`, updateErr.message);
+				}
 			} else {
 				console.error(`❌ Error in ${repoName}:`, err.message);
 			}
@@ -82,5 +146,5 @@ async function addLabelToRepo(repoName) {
 	}
 }
 
-// addLabelToAllRepos();
-addLabelToRepo('tracing');
+addLabelToAllRepos();
+// addLabelToRepo('tracing');
