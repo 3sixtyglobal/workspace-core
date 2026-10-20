@@ -57,8 +57,13 @@ jobs:
           node-version: 24
 
       # Setup pnpm after node, the runners have no system node for its installer to use.
+      # The root lockfile is not committed, so the store cache is keyed on the
+      # lock files of the submodules, which cover what the root install resolves.
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
+        with:
+          cache: true
+          cache_dependency_path: '*/pnpm-lock.yaml'
 
       # The root lockfile is not committed, so the install resolves it fresh.
       - name: Install workspace dependencies
