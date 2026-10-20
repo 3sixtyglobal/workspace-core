@@ -1,5 +1,37 @@
 # Commands
 
+## Workspace commands
+
+Running `pnpm run workspace:install` in the workspace root installs all the submodules as one pnpm workspace. The `@3sixty` dependencies between submodules normally use the `next` release tag, so they come from the registry. In the root workspace `.pnpmfile.mjs` rewrites them to `workspace:*`, so they link to the local packages instead. This lets you build and lint changes that span several submodules before any of them are published.
+
+```shell
+pnpm run workspace:install
+pnpm run workspace:quality-no-test
+```
+
+| Command                     | Runs                                                                     |
+| --------------------------- | ------------------------------------------------------------------------ |
+| `workspace:install`         | `pnpm install --force` in the workspace root                             |
+| `workspace:format`          | `format` in every submodule                                              |
+| `workspace:lint`            | `lint` in every submodule, build the packages first                      |
+| `workspace:build`           | `build` in every package, in dependency order                            |
+| `workspace:dist`            | `dist` in every package, in dependency order                             |
+| `workspace:dist-no-test`    | `dist:no-test` in every package, in dependency order                     |
+| `workspace:test`            | `test` in every package, in dependency order                             |
+| `workspace:quality`         | `workspace:format`, then `workspace:dist`, then `workspace:lint`         |
+| `workspace:quality-no-test` | `workspace:format`, then `workspace:dist-no-test`, then `workspace:lint` |
+
+The package commands use `scripts/workspace-run.mjs`, as `pnpm -r` builds its ordering from the manifests on disk and does not see the release tag dependencies. A package starts as soon as everything it depends on has finished, and the run stops at the first failure. You can pass package names to run only those packages and their dependencies, and `--concurrency` to change how many run at once:
+
+```shell
+node ./scripts/workspace-run.mjs build @3sixty/engine --concurrency 4
+```
+
+### Workspace notes
+
+- Each submodule keeps its own `pnpm-workspace.yaml` and lockfile, so it still installs and builds standalone. Whichever install ran last owns the package `node_modules` folders, and neither install notices when the other has replaced them, so switching needs `--force`. Run `pnpm install --force` in a submodule to go back to the published packages, and `pnpm run workspace:install` to link them again.
+- The root lockfile is not committed, as it covers every submodule and would change with each submodule update.
+
 ## Cross module commands
 
 The following commands are available across all the modules.

@@ -1,7 +1,7 @@
 {
-	"name": "@3sixty/workspace",
+	"name": "3sixty-workspace-core",
 	"version": "0.0.0",
-	"description": "Workspace",
+	"description": "Workspace Core",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/3sixtyglobal/workspace-core.git"
@@ -30,7 +30,16 @@
 		"submodule:format-lint-dist-docs": "node ./scripts/submodules.mjs format-lint-dist-docs",
 		"submodule:package-update": "node ./scripts/submodules.mjs package-update",
 		"submodule:align-main": "node ./scripts/submodule-align.mjs main",
-		"submodule:align-next": "node ./scripts/submodule-align.mjs next"
+		"submodule:align-next": "node ./scripts/submodule-align.mjs next",
+		"workspace:install": "pnpm install --force",
+		"workspace:format": "node ./scripts/workspace-run.mjs format --repos",
+		"workspace:lint": "node ./scripts/workspace-run.mjs lint --repos",
+		"workspace:build": "node ./scripts/workspace-run.mjs build",
+		"workspace:dist": "node ./scripts/workspace-run.mjs dist",
+		"workspace:dist-no-test": "node ./scripts/workspace-run.mjs dist:no-test",
+		"workspace:test": "node ./scripts/workspace-run.mjs test",
+		"workspace:quality": "pnpm run workspace:format && pnpm run workspace:dist && pnpm run workspace:lint",
+		"workspace:quality-no-test": "pnpm run workspace:format && pnpm run workspace:dist-no-test && pnpm run workspace:lint"
 	},
 	"submodules": [
 		"framework",

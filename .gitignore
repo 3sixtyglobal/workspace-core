@@ -2,3 +2,8 @@
 # Without these, a `git add -A` records them as gitlinks with no .gitmodules
 # entry, which breaks actions/checkout with "No url found for submodule path".
 ai/
+
+# The root install covers every submodule package, so its lockfile would change
+# with every submodule update, each submodule keeps its own lockfile instead.
+pnpm-lock.yaml
+node_modules/

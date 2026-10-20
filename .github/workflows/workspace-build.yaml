@@ -1,0 +1,73 @@
+name: Workspace Build
+
+# Builds every submodule together as one workspace, with the @3sixty packages
+# linked to their local source rather than the published versions, so changes
+# which break other submodules are found before they are released.
+on:
+  push:
+    branches:
+      - next
+      - main
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Branch to build
+        required: true
+        type: choice
+        default: '🌱 next'
+        options:
+          - '🌱 next'
+          - '🌳 main'
+
+# Cancel older in-progress runs for the same branch.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event.inputs.branch }}
+  cancel-in-progress: true
+
+jobs:
+  workspace-build:
+    runs-on: ${{ github.event.repository.private && fromJSON('{"group":"3sixty","labels":"self-hosted"}') || 'ubuntu-latest' }}
+
+    timeout-minutes: 180
+
+    steps:
+      - name: Set target branch
+        id: set-branch
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [[ "${{ github.event.inputs.branch }}" == *"main"* ]]; then
+            BRANCH="main"
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            BRANCH="next"
+          else
+            BRANCH="${{ github.ref_name }}"
+          fi
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout workspace
+        uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.ORG_GHA_RELEASE_TOKEN }}
+          ref: ${{ steps.set-branch.outputs.branch }}
+          submodules: true
+          fetch-depth: 1
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      # Setup pnpm after node, the runners have no system node for its installer to use.
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      # The root lockfile is not committed, so the install resolves it fresh.
+      - name: Install workspace dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      # The tests need the docker services each submodule sets up for itself, so
+      # they are run by the submodule builds rather than here.
+      - name: Build workspace
+        run: pnpm run workspace:dist-no-test
+
+      - name: Lint workspace
+        run: pnpm run workspace:lint

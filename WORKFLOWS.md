@@ -7,6 +7,7 @@ The workspace repository contains the following workflows in `.github/workflows`
 | Workflow                  | File                         | Triggers                                               |
 | ------------------------- | ---------------------------- | ------------------------------------------------------ |
 | Workspace Submodule Build | `submodule-published.yaml`   | `schedule`, `workflow_dispatch`, `repository_dispatch` |
+| Workspace Build           | `workspace-build.yaml`       | `push` to `next` and `main`, `workflow_dispatch`       |
 | Align Branches            | `align-branches.yaml`        | `workflow_dispatch`                                    |
 | Publish Project Audit     | `publish-project-audit.yaml` | `workflow_dispatch`                                    |
 | Project Add Issue         | `project-add-issue.yaml`     | `issues` opened                                        |
@@ -44,6 +45,14 @@ Behaviour:
   - prepares and runs the submodule `teardown-test-env` action (with `always()` semantics)
 
 For the `schedule` and `repository_dispatch` triggers, the workflow always runs in no-test mode.
+
+### Workspace Build
+
+The **Workspace Build** workflow checks out the workspace with all its submodules and installs them as one workspace, with the `@3sixty` dependencies linked to their local source rather than the published packages (see [Workspace commands](./COMMANDS.md#workspace-commands)). It then runs `pnpm run workspace:dist-no-test` to build every package in dependency order, followed by `pnpm run workspace:lint`.
+
+This catches changes in one submodule that break another before they are published, which the **Workspace Submodule Build** only finds afterwards. Tests are not run, as they need the docker services each submodule sets up for itself.
+
+It runs on every push to `next` or `main`, which includes the submodule updates from **Align Branches**, and can be run manually with a `branch` choice of `🌱 next` (default) or `🌳 main`.
 
 ### Align Branches
 

@@ -41,9 +41,16 @@ pnpm run submodule:quality-no-test
 
 ## Cross-repo local linking
 
-The workspace does not directly consume sibling source code during development. Dependencies are resolved through published npm packages.
+Each submodule resolves its dependencies on other submodules through the published npm packages.
 
-When you need to test local changes from one repository inside another before a release, run the target repository's local link script:
+To build changes that span several repositories before a release, install from the workspace root instead. This links every submodule to the local source of the others, and the `workspace:*` commands then build and lint them in dependency order, see [Workspace commands](./COMMANDS.md#workspace-commands):
+
+```shell
+pnpm run workspace:install
+pnpm run workspace:quality-no-test
+```
+
+To link only specific packages into one repository, run that repository's local link script instead:
 
 ```shell
 pnpm run local-link

@@ -1,5 +1,26 @@
-# The workspace repo has no sub packages, this file carries the pnpm settings
-# which are applied when installing the orchestration dependencies.
+# Running pnpm install in the workspace root installs every submodule package as
+# one workspace, with the @3sixty dependencies linked to the local packages by
+# .pnpmfile.cjs, so the whole graph can be built in dependency order. Each
+# submodule keeps its own pnpm-workspace.yaml, so an install inside a submodule
+# still resolves from the registry and takes the packages back to standalone.
+packages:
+  # The submodule roots carry the format and lint toolchains.
+  - '*'
+  - '*/packages/*'
+  - '*/apps/*'
+  # These are not linked yet, their packages are resolved from the registry.
+  - '!api-auth/**'
+  - '!authorization/**'
 
 # Every dependency in the repo is pinned to an exact version.
 saveExact: true
+
+# The @3sixty packages are released continuously as next builds, so they are
+# exempt from the release age hold pnpm applies to everything else.
+minimumReleaseAgeExclude:
+  - '@3sixty/*'
+
+allowBuilds:
+  esbuild: true
+  protobufjs: true
+  unrs-resolver: true
