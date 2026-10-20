@@ -197,6 +197,8 @@ async function runScript(pkg, script) {
 
 	const prefix = `${path.relative(workspaceRoot, pkg.dir).replaceAll('\\', '/')} ${script}:`;
 	process.stdout.write(`${prefix} started\n`);
+	const startTime = performance.now();
+	const elapsed = () => `${((performance.now() - startTime) / 1000).toFixed(1)}s`;
 
 	return new Promise((resolve, reject) => {
 		// Every pnpm call made by the script, including nested ones, has to use the
@@ -230,10 +232,10 @@ async function runScript(pkg, script) {
 		);
 		sp.on('exit', exitCode => {
 			if (exitCode === 0) {
-				process.stdout.write(`${prefix} done\n`);
+				process.stdout.write(`${prefix} done in ${elapsed()}\n`);
 				resolve();
 			} else {
-				process.stdout.write(`${prefix} failed with exit code ${exitCode}\n`);
+				process.stdout.write(`${prefix} failed with exit code ${exitCode} after ${elapsed()}\n`);
 				reject(new Error(`Script ${script} failed in ${pkg.dir}`));
 			}
 		});
