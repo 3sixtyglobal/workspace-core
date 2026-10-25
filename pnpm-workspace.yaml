@@ -8,9 +8,6 @@ packages:
   - '*'
   - '*/packages/*'
   - '*/apps/*'
-  # These are not linked yet, their packages are resolved from the registry.
-  - '!api-auth/**'
-  - '!authorization/**'
 
 # Every dependency in the repo is pinned to an exact version.
 saveExact: true

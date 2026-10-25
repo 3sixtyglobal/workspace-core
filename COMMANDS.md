@@ -18,6 +18,7 @@ pnpm run workspace:quality-no-test
 | `workspace:dist`            | `dist` in every package, in dependency order                             |
 | `workspace:dist-no-test`    | `dist:no-test` in every package, in dependency order                     |
 | `workspace:test`            | `test` in every package, in dependency order                             |
+| `workspace:test:bun`        | `test:bun` in every package, in dependency order                         |
 | `workspace:quality`         | `workspace:format`, then `workspace:dist`, then `workspace:lint`         |
 | `workspace:quality-no-test` | `workspace:format`, then `workspace:dist-no-test`, then `workspace:lint` |
 
