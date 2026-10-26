@@ -8,7 +8,7 @@
 // With --max-minutes no further repo is started once that time has passed, and the repo to
 // continue from is written to the GITHUB_OUTPUT file as "next", so a workflow can resume.
 import { spawnSync } from 'node:child_process';
-import { appendFileSync, existsSync, readdirSync, readFileSync } from 'node:fs';
+import { appendFileSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
 const ORG = '3sixtyglobal';
@@ -102,6 +102,11 @@ async function releaseRepo(repo) {
 	if (run('git status --porcelain', cwd).stdout.trim() !== '') {
 		throw new Error(`[${repo}] working tree is not clean, commit or stash the changes first`);
 	}
+	// A detached checkout, as left by a submodule update, is moved to next, but a branch in use is not.
+	const branch = run('git branch --show-current', cwd).stdout.trim();
+	if (branch !== '' && branch !== 'next') {
+		throw new Error(`[${repo}] checkout is on ${branch}, switch it to next first`);
+	}
 	run('git fetch origin next', cwd);
 	run('git checkout next', cwd);
 	run('git pull --ff-only origin next', cwd);
@@ -135,8 +140,15 @@ async function releaseRepo(repo) {
 	log(`[${repo}] released`);
 }
 
-// Brings the local checkout up to date with the version bumps the release merged.
+// Brings the local checkout up to date with the version bumps the release merged, unless it is in use.
 function pullRelease(repo, cwd) {
+	const branch = run('git branch --show-current', cwd).stdout.trim();
+	if (branch !== 'next' || run('git status --porcelain', cwd).stdout.trim() !== '') {
+		log(
+			`[${repo}] local checkout is on ${branch || 'a detached HEAD'} or has changes, not pulling`
+		);
+		return;
+	}
 	run('git pull --ff-only origin next', cwd);
 	run('pnpm install --frozen-lockfile', cwd);
 	log(`[${repo}] pulled ${run('git log -1 --format=%s', cwd).stdout.trim()}`);
@@ -266,21 +278,17 @@ async function waitForNpm(repo, cwd) {
 	);
 }
 
+// Read from origin/next so the released versions are found whatever the local checkout is on.
 function publishablePackages(cwd) {
+	run('git fetch origin next', cwd);
+	const files = run('git ls-tree -r --name-only origin/next', cwd)
+		.stdout.split('\n')
+		.filter(file => /^(packages|apps)\/[^/]+\/package\.json$/.test(file.trim()));
 	const packages = [];
-	for (const folder of ['packages', 'apps']) {
-		const root = path.join(cwd, folder);
-		if (!existsSync(root)) {
-			continue;
-		}
-		for (const entry of readdirSync(root, { withFileTypes: true })) {
-			const file = path.join(root, entry.name, 'package.json');
-			if (entry.isDirectory() && existsSync(file)) {
-				const pkg = JSON.parse(readFileSync(file, 'utf8'));
-				if (!pkg.private) {
-					packages.push({ name: pkg.name, version: pkg.version });
-				}
-			}
+	for (const file of files) {
+		const pkg = JSON.parse(run(`git show origin/next:${file.trim()}`, cwd).stdout);
+		if (!pkg.private) {
+			packages.push({ name: pkg.name, version: pkg.version });
 		}
 	}
 	return packages;
