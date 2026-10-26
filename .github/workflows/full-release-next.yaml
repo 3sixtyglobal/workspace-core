@@ -1,0 +1,92 @@
+name: Full Release Next
+run-name: ${{ inputs.from != '' && format('Full Release Next from {0}', inputs.from) || 'Full Release Next' }}
+
+# Releases every submodule to the npm next tag in the order of the package.json
+# submodules array, using scripts/release-next.mjs. Each submodule has its
+# framework dependencies updated, a Bun only build run, and release-next.yaml
+# dispatched with force, before its packages are confirmed on npm.
+#
+# A run stops starting submodules after its time budget so it finishes within
+# the job limit, then dispatches a new run to continue from the next submodule.
+# A release left running when a run ends is followed by the next run.
+
+on:
+  workflow_dispatch:
+    inputs:
+      from:
+        description: 'Submodule to start from, releasing it and every submodule after it. Leave blank to start from the first.'
+        required: false
+        type: string
+        default: ''
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+env:
+  ORG_GPG_EMAIL: ${{ secrets.ORG_GPG_EMAIL }}
+  ORG_GPG_NAME: ${{ secrets.ORG_GPG_NAME }}
+
+jobs:
+  release:
+    name: Release submodules
+    runs-on: ${{ github.event.repository.private && fromJSON('{"group":"3sixty","labels":"self-hosted"}') || 'ubuntu-latest' }}
+    timeout-minutes: 360
+
+    steps:
+      - name: Checkout workspace
+        uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.ORG_GHA_RELEASE_TOKEN }}
+          ref: next
+          submodules: true
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      # Setup pnpm after node, the runners have no system node for its installer to use.
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Import GPG key
+        run: |
+          echo "${{ secrets.ORG_GPG_PRIVATE_KEY }}" | base64 --decode | gpg --import
+          echo "ORG_GPG_KEY_ID=${{ secrets.ORG_GPG_KEY_ID }}" >> $GITHUB_ENV
+
+      - name: Configure Git
+        run: |
+          git config --global user.email "$ORG_GPG_EMAIL"
+          git config --global user.name "$ORG_GPG_NAME"
+          git config --global user.signingkey "$ORG_GPG_KEY_ID"
+          git config --global commit.gpgsign true
+
+      # The budget leaves time within the job limit for the submodule in progress to finish.
+      - name: Release submodules
+        id: release
+        env:
+          GH_TOKEN: ${{ secrets.ORG_GHA_RELEASE_TOKEN }}
+          FROM: ${{ inputs.from }}
+        run: node ./scripts/release-next.mjs --max-minutes 300 ${FROM:+--from "$FROM"}
+
+      - name: Continue in a new run
+        if: ${{ steps.release.outputs.next != '' }}
+        env:
+          GH_TOKEN: ${{ secrets.ORG_GHA_RELEASE_TOKEN }}
+        run: |
+          gh workflow run full-release-next.yaml \
+            --repo "${{ github.repository }}" \
+            --ref next \
+            -f from="${{ steps.release.outputs.next }}"
+          echo "::notice title=Continuing::Dispatched a new run from ${{ steps.release.outputs.next }}"
+
+      - name: Cleanup GPG key
+        if: always()
+        run: |
+          FINGERPRINT=$(gpg --list-secret-keys --with-colons "$ORG_GPG_KEY_ID" | awk -F: '/fpr:/ {print $10}' | head -1)
+          if [ -n "$FINGERPRINT" ]; then
+            gpg --batch --yes --delete-secret-keys "$FINGERPRINT" || true
+            gpg --batch --yes --delete-keys "$FINGERPRINT" || true
+          fi
