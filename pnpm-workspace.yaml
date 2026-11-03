@@ -17,6 +17,16 @@ saveExact: true
 minimumReleaseAgeExclude:
   - '@3sixty/*'
 
+# Dependencies that pnpm update leaves alone. The toolchain is pinned deliberately,
+# the @iota packages have to match the versions the published @3sixty packages
+# depend on, and the @3sixty packages are pinned to a release tag rather than a
+# version, so they are refreshed by the second half of the package:update script.
+update:
+  ignoreDeps:
+    - typescript
+    - '@iota/*'
+    - '@3sixty/*'
+
 allowBuilds:
   esbuild: true
   protobufjs: true
