@@ -2,18 +2,19 @@
 	"language": "en-GB",
 	"ignorePaths": [],
 	"words": [
-		"Stiftung",
+		"3sixtyglobal",
+		"CEFACT",
 		"Dataspace",
 		"dataspace",
-		"IDSA",
-		"ODRL",
-		"Firestore",
-		"IPFS",
-		"CEFACT",
-		"DCSA",
 		"DCAT",
+		"DCSA",
+		"Firestore",
 		"FOAF",
-		"LOCODE"
+		"IDSA",
+		"IPFS",
+		"LOCODE",
+		"ODRL",
+		"Stiftung"
 	],
 	"ignoreRegExpList": [],
 	"ignoreWords": ["Cunknown"]
